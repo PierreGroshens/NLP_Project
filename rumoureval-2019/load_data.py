@@ -44,7 +44,7 @@ def main():
     df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
     df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
     df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
-        
+    
     create_csv_files(df_train, df_test, df_eval)
     
 
@@ -89,13 +89,14 @@ def create_df_data(path_training, path_answer):
 
     return df_final
 
-def clean_data(text, keep_stop_words = True, lemmatize = False):
+def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False):
     #remove links
     text = re.sub(r'http\S+', '', text)
-
-    #remove punct except @
-    punc_to_remove = string.punctuation.replace('@', '')
-    text = "".join([char for char in text if char not in punc_to_remove])
+    if (punctuation == False):
+        
+        #remove punct except @
+        punc_to_remove = string.punctuation.replace('@', '')
+        text = "".join([char for char in text if char not in punc_to_remove])
 
     if (keep_stop_words == False):
         text = remove_stop_words(text)        
