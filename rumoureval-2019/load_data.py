@@ -16,7 +16,7 @@ def main():
     df_train = create_df_data('twitter-english', 'train-key.json')
     df_eval = create_df_data('twitter-english', 'dev-key.json')
     df_test = create_df_data('twitter-en-test-data', 'final-eval-key.json')
-        
+    
     #cleaning data
     global stop_words_list
     
