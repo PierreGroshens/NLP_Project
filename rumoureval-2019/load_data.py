@@ -10,12 +10,12 @@ def main():
     df_train = create_df_data('twitter-english', 'train-key.json')
     df_eval = create_df_data('twitter-english', 'dev-key.json')
     df_test = create_df_data('twitter-en-test-data', 'final-eval-key.json')
-        
+    
     #cleaning data
     df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
     df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
     df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
-        
+    
     create_csv_files(df_train, df_test, df_eval)
     
 
