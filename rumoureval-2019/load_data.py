@@ -41,9 +41,9 @@ def main():
 
     stop_words_list = stopwords.words('english')
     
-    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x, False, True))
-    df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x, False, True))
-    df_test['text'] = df_test['text'].apply(lambda x: clean_data(x, False, True))
+    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
+    df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
+    df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
         
     create_csv_files(df_train, df_test, df_eval)
     
