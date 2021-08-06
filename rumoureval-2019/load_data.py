@@ -89,7 +89,7 @@ def create_df_data(path_training, path_answer):
 
     return df_final
 
-def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False):
+def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False, keep_emojis = True):
     #remove links
     text = re.sub(r'http\S+', '', text)
     if (punctuation == False):
@@ -104,8 +104,10 @@ def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = Fal
     if (lemmatize == True):
         text = lemmatize_words(text)        
     
-    #emojis out
-    text = re.sub(EMOJI_PATTERN, '', text)
+    if (keep_emojis == False):
+        #emojis out
+        text = re.sub(EMOJI_PATTERN, '', text)        
+    
     #lower case
     return text.lower()
 
