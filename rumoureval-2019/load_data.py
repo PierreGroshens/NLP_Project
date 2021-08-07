@@ -16,9 +16,8 @@ def main():
     df_train = create_df_data('twitter-english', 'train-key.json')
     df_eval = create_df_data('twitter-english', 'dev-key.json')
     df_test = create_df_data('twitter-en-test-data', 'final-eval-key.json')
-    
+    print("\n df created \n")
     #cleaning data
-    global stop_words_list
     
     global EMOJI_PATTERN
     EMOJI_PATTERN = re.compile(
@@ -39,12 +38,19 @@ def main():
         )
 
 
+    global stop_words_list
     stop_words_list = stopwords.words('english')
     
-    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
+    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x, keep_emojis=False, lemmatize=True))
     df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
     df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
+    print("\n df cleaned \n")
     
+    save_source_tweet(df_train, 'twitter-english')
+    save_source_tweet(df_eval, 'twitter-english')
+    save_source_tweet(df_test, 'twitter-en-test-data')
+    print("\n df concatenated \n")
+
     create_csv_files(df_train, df_test, df_eval)
     
 
@@ -68,7 +74,8 @@ def create_df_data(path_training, path_answer):
 
                         index += 1
 
-    #rename column into label                    
+    #rename column into label
+    path_answer = os.path.realpath(path_answer)                   
     df_label = pd.read_json(path_answer)
     first_col = df_label.columns[0]
     df_label.rename(columns={first_col:'label'}, inplace=True)
@@ -132,6 +139,41 @@ def create_csv_files(df_train, df_test, df_eval):
     df_test.to_csv('test_data.csv', index=False)
     df_eval.to_csv('eval_data.csv', index=False)
 
+def save_source_tweet(df, path):
+    #add parent id col to dataframe object
+    df.insert(1, "parent_id", None)
+    
+    fill_parent_id(df, path)
+    concatenate(df)
+
+def fill_parent_id(df, path):
+    for path, dirs, files in os.walk(path):
+
+        if (path.endswith("replies")):
+
+            for _, _, files in os.walk(path):
+                for file in files:
+
+                    with open(os.path.join(path,file)) as jsonFile:
+                        data = json.load(jsonFile)
+                        parent_id = data["in_reply_to_status_id"]
+                        tweet_id = re.sub('\D*', '', file)
+
+                        df.loc[df.id == int(tweet_id), "parent_id"] = parent_id
+
+def concatenate(df):
+    for i in df.index:
+
+        id_to_search = df.loc[i].parent_id
+
+        if (pd.isna(id_to_search) == False):
+            try:
+                context = df[df.id == id_to_search].text.values[0]
+
+                end_sentence = df.loc[i].text
+                df.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
+            except IndexError:
+                print('warning')
 
 if __name__ == "__main__":
     main()
