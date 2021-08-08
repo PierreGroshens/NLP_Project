@@ -45,12 +45,13 @@ def main():
     df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x, lowercase=True))
     df_test['text'] = df_test['text'].apply(lambda x: clean_data(x, lowercase=True))
     print("\n df cleaned \n")
-
-    #df_train = create_history(df_train, 'twitter-english')
-    #df_eval = create_history(df_eval, 'twitter-english')
-    #df_test = create_history(df_test, 'twitter-en-test-data')
+    global full_concatenation 
+    full_concatenation = True
+    df_train = create_history(df_train, 'twitter-english')
+    df_eval = create_history(df_eval, 'twitter-english')
+    df_test = create_history(df_test, 'twitter-en-test-data')
     
-    #print("\n df concatenated \n")
+    print("\n df concatenated \n")
 
     create_csv_files(df_train, df_test, df_eval)
     
@@ -153,7 +154,8 @@ def create_history(df, path):
     fill_parent_id(df, path)
     df_final = df.copy()
     concatenate(df, df_final)
-    return df_final
+    
+    return df_final if full_concatenation == False else df
 
 def fill_parent_id(df, path):
     for path, dirs, files in os.walk(path):
@@ -180,7 +182,8 @@ def concatenate(df, df_final):
                 context = df[df.id == id_to_search].text.values[0]
 
                 end_sentence = df.loc[i].text
-                df_final.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
+                df_modified = df if full_concatenation == True else df_final
+                df_modified.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
             except IndexError:
                 print('warning')
                 print(id_to_search)
