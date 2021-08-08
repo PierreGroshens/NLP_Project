@@ -41,18 +41,16 @@ def main():
     global stop_words_list
     stop_words_list = stopwords.words('english')
     
-    #df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
-    #df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
-    #df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
-    #print("\n df cleaned \n")
-    
+    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x, lowercase=True))
+    df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x, lowercase=True))
+    df_test['text'] = df_test['text'].apply(lambda x: clean_data(x, lowercase=True))
+    print("\n df cleaned \n")
+
     #df_train = create_history(df_train, 'twitter-english')
     #df_eval = create_history(df_eval, 'twitter-english')
     #df_test = create_history(df_test, 'twitter-en-test-data')
-    create_history(df_train, 'twitter-english')
-    create_history(df_eval, 'twitter-english')
-    create_history(df_test, 'twitter-en-test-data')
-    print("\n df concatenated \n")
+    
+    #print("\n df concatenated \n")
 
     create_csv_files(df_train, df_test, df_eval)
     
@@ -99,9 +97,10 @@ def create_df_data(path_training, path_answer):
 
     return df_final
 
-def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False, keep_emojis = True, lowercase = False):
+def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False, keep_emojis = True, lowercase = False, keep_links = True):
     #remove links
-    text = re.sub(r'http\S+', ' <LINK> ', text)
+    if (keep_links == False):
+        text = re.sub(r'http\S+', ' <LINK> ', text)
 
     if (keep_emojis == False):
         #emojis out
@@ -154,7 +153,7 @@ def create_history(df, path):
     fill_parent_id(df, path)
     df_final = df.copy()
     concatenate(df, df_final)
-    #return df_final
+    return df_final
 
 def fill_parent_id(df, path):
     for path, dirs, files in os.walk(path):
@@ -181,7 +180,7 @@ def concatenate(df, df_final):
                 context = df[df.id == id_to_search].text.values[0]
 
                 end_sentence = df.loc[i].text
-                df.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
+                df_final.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
             except IndexError:
                 print('warning')
                 print(id_to_search)
