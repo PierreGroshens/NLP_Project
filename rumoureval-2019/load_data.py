@@ -41,14 +41,17 @@ def main():
     global stop_words_list
     stop_words_list = stopwords.words('english')
     
-    df_train['text'] = df_train['text'].apply(lambda x: clean_data(x, keep_emojis=False, lemmatize=True))
-    df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
-    df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
-    print("\n df cleaned \n")
+    #df_train['text'] = df_train['text'].apply(lambda x: clean_data(x))
+    #df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x))
+    #df_test['text'] = df_test['text'].apply(lambda x: clean_data(x))
+    #print("\n df cleaned \n")
     
-    save_source_tweet(df_train, 'twitter-english')
-    save_source_tweet(df_eval, 'twitter-english')
-    save_source_tweet(df_test, 'twitter-en-test-data')
+    #df_train = create_history(df_train, 'twitter-english')
+    #df_eval = create_history(df_eval, 'twitter-english')
+    #df_test = create_history(df_test, 'twitter-en-test-data')
+    create_history(df_train, 'twitter-english')
+    create_history(df_eval, 'twitter-english')
+    create_history(df_test, 'twitter-en-test-data')
     print("\n df concatenated \n")
 
     create_csv_files(df_train, df_test, df_eval)
@@ -96,27 +99,32 @@ def create_df_data(path_training, path_answer):
 
     return df_final
 
-def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False, keep_emojis = True):
+def clean_data(text, punctuation = True, keep_stop_words = True, lemmatize = False, keep_emojis = True, lowercase = False):
     #remove links
-    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'http\S+', ' <LINK> ', text)
+
+    if (keep_emojis == False):
+        #emojis out
+        text = re.sub(EMOJI_PATTERN, ' <EMOJIS> ', text)        
+        
     if (punctuation == False):
         
         #remove punct except @
         punc_to_remove = string.punctuation.replace('@', '')
         text = "".join([char for char in text if char not in punc_to_remove])
-
+        
     if (keep_stop_words == False):
         text = remove_stop_words(text)        
         
     if (lemmatize == True):
         text = lemmatize_words(text)        
     
-    if (keep_emojis == False):
-        #emojis out
-        text = re.sub(EMOJI_PATTERN, '', text)        
     
     #lower case
-    return text.lower()
+    if(lowercase == True):
+        text = text.lower()
+        
+    return text
 
 def remove_stop_words(text):
     tokens = word_tokenize(text)
@@ -139,12 +147,14 @@ def create_csv_files(df_train, df_test, df_eval):
     df_test.to_csv('test_data.csv', index=False)
     df_eval.to_csv('eval_data.csv', index=False)
 
-def save_source_tweet(df, path):
+def create_history(df, path):
     #add parent id col to dataframe object
     df.insert(1, "parent_id", None)
     
     fill_parent_id(df, path)
-    concatenate(df)
+    df_final = df.copy()
+    concatenate(df, df_final)
+    #return df_final
 
 def fill_parent_id(df, path):
     for path, dirs, files in os.walk(path):
@@ -161,7 +171,7 @@ def fill_parent_id(df, path):
 
                         df.loc[df.id == int(tweet_id), "parent_id"] = parent_id
 
-def concatenate(df):
+def concatenate(df, df_final):
     for i in df.index:
 
         id_to_search = df.loc[i].parent_id
@@ -174,6 +184,7 @@ def concatenate(df):
                 df.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
             except IndexError:
                 print('warning')
-
+                print(id_to_search)
+    
 if __name__ == "__main__":
     main()
