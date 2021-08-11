@@ -12,6 +12,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from nltk import WordNetLemmatizer
+
 def main():
     df_train = create_df_data('twitter-english', 'train-key.json')
     df_eval = create_df_data('twitter-english', 'dev-key.json')
@@ -41,12 +42,18 @@ def main():
     global stop_words_list
     stop_words_list = stopwords.words('english')
     
+    #cleaning can be modified by updating args given to clean_data function
     df_train['text'] = df_train['text'].apply(lambda x: clean_data(x, lowercase=True))
     df_eval['text'] = df_eval['text'].apply(lambda x: clean_data(x, lowercase=True))
     df_test['text'] = df_test['text'].apply(lambda x: clean_data(x, lowercase=True))
     print("\n df cleaned \n")
+    
     global full_concatenation 
     full_concatenation = True
+    
+    #if you want to save full history dataset then True 
+    #if you want to save chain dataset then False
+    
     df_train = create_history(df_train, 'twitter-english')
     df_eval = create_history(df_eval, 'twitter-english')
     df_test = create_history(df_test, 'twitter-en-test-data')
@@ -62,6 +69,9 @@ def create_df_data(path_training, path_answer):
     index = 0
 
     for path, dirs, files in os.walk(path_training):
+        #we are only interested in source-tweet folder
+        #this is where data are
+        #we then open the json file and take the relevant information
         if (path.endswith('source-tweet') or path.endswith('replies')):
             for filename in os.listdir(path):
                 if filename.endswith('.json'):
@@ -82,7 +92,9 @@ def create_df_data(path_training, path_answer):
     first_col = df_label.columns[0]
     df_label.rename(columns={first_col:'label'}, inplace=True)
     
-    #add labels
+    #add labels to df object
+    #labels not found are replaced by not_found
+    #not_found labels are tweets that don't appear in the training set but testing or evaluating one
     for i in range(len(df)):
         try:
             index = df.loc[i].id
@@ -148,7 +160,7 @@ def create_csv_files(df_train, df_test, df_eval):
     df_eval.to_csv('eval_data.csv', index=False)
 
 def create_history(df, path):
-    #add parent id col to dataframe object
+    #create new column for parent id of tweet
     df.insert(1, "parent_id", None)
     
     fill_parent_id(df, path)
@@ -158,6 +170,9 @@ def create_history(df, path):
     return df_final if full_concatenation == False else df
 
 def fill_parent_id(df, path):
+    #add parent id col to dataframe object
+    
+    #we will go look in the repliees.json file to save parent id
     for path, dirs, files in os.walk(path):
 
         if (path.endswith("replies")):
@@ -182,8 +197,12 @@ def concatenate(df, df_final):
                 context = df[df.id == id_to_search].text.values[0]
 
                 end_sentence = df.loc[i].text
+                #if full concatenation or not, then not same df object modified
                 df_modified = df if full_concatenation == True else df_final
                 df_modified.loc[i, 'text'] = context + ' <REPLY> ' + end_sentence
+            
+            #some parent tweets do not exist in all the dataset. 
+            #this happens 3 times
             except IndexError:
                 print('warning')
                 print(id_to_search)
